@@ -255,7 +255,7 @@ class ActivityWatchProcessor:
             window_title = event.get('data', {}).get('title', '')
             app_name = event.get('data', {}).get('app', '')
             duration = event.get('duration', 0)
-            timestamp = datetime.fromisoformat(event.get('timestamp', '').replace('Z', '+00:00'))
+            timestamp = datetime.fromisoformat(event.get('timestamp', '').replace('Z', '+00:00')).replace(tzinfo=None)
 
             logger.debug(f"[EVENT] Processing event: '{window_title}' (app: '{app_name}', duration: {duration}s)")
 
@@ -958,6 +958,33 @@ class AutomationManager:
 
         return all_entries
 
+    def show_overflow_items(self, entries: List[TimeEntry], max_seconds: int):
+        """Show specific items that exceed the daily limit in console"""
+        # Sort entries by duration (largest first) to show what could be reduced
+        sorted_entries = sorted(entries, key=lambda e: e.duration_seconds, reverse=True)
+
+        running_total = 0
+        items_that_fit = []
+        items_that_dont_fit = []
+
+        for entry in sorted_entries:
+            if running_total + entry.duration_seconds <= max_seconds:
+                running_total += entry.duration_seconds
+                items_that_fit.append(entry)
+            else:
+                items_that_dont_fit.append(entry)
+
+        if items_that_dont_fit:
+            print(f"\nItems that exceed {self.config.working_hours_per_day}h daily limit:")
+            for entry in items_that_dont_fit:
+                hours = entry.duration_seconds / 3600
+                start_time_str = entry.start_time.strftime('%H:%M')
+                entry_type = "STATIC" if entry.is_static_task else "ACTIVITY"
+                print(f"  {start_time_str} - {entry.jira_key}: {hours:.2f}h ({entry_type}) - {entry.description}")
+
+            total_overflow_hours = sum(e.duration_seconds for e in items_that_dont_fit) / 3600
+            print(f"Total overflow: {total_overflow_hours:.2f}h from {len(items_that_dont_fit)} items")
+
     def suggest_reductions(self, entries: List[TimeEntry], excess_seconds: int) -> List[str]:
         """Analyze entries and suggest what to reduce when over daily limit"""
         suggestions = []
@@ -1019,8 +1046,7 @@ class AutomationManager:
             excess_hours = excess_seconds / 3600
             preview_data["overflow_warning"] = {
                 "message": f"Total time ({preview_data['total_hours']}h) exceeds daily limit ({self.config.working_hours_per_day}h) by {excess_hours:.1f}h",
-                "excess_hours": round(excess_hours, 1),
-                "suggestions": self.suggest_reductions(entries, excess_seconds)
+                "excess_hours": round(excess_hours, 1)
             }
 
         for entry in entries:
@@ -1050,22 +1076,25 @@ class AutomationManager:
             print(f"\n⚠️  WARNING: Time Overflow Detected ⚠️")
             print(f"Total Time: {preview_data['total_hours']}h ({excess_hours:.1f}h over {self.config.working_hours_per_day}h limit)")
 
-            suggestions = self.suggest_reductions(entries, total_seconds - max_seconds)
-            if suggestions:
-                print(f"\nSuggestions for reduction:")
-                for i, suggestion in enumerate(suggestions, 1):
-                    print(f"  {i}. {suggestion}")
-
             print(f"\n📝 Edit {self.config.preview_file_path} to adjust entries before submitting.")
             print(f"💡 Run 'python {sys.argv[0]} --submit' when ready.")
         else:
             print(f"\n✅ Time within daily limit ({self.config.working_hours_per_day}h)")
             print(f"📝 Review {self.config.preview_file_path} and run 'python {sys.argv[0]} --submit' to submit.")
 
-        print(f"\nEntries:")
-        for entry in entries:
+        # Sort entries by start time for display
+        sorted_entries = sorted(entries, key=lambda e: e.start_time)
+
+        print(f"\nEntries (with start times):")
+        for entry in sorted_entries:
             hours = entry.duration_seconds / 3600
-            print(f"  {entry.jira_key}: {hours:.2f}h - {entry.description}")
+            start_time_str = entry.start_time.strftime('%H:%M')
+            print(f"  {start_time_str} - {entry.jira_key}: {hours:.2f}h - {entry.description}")
+
+        # Show overflow items if over limit
+        if total_seconds > max_seconds:
+            self.show_overflow_items(entries, max_seconds)
+
         print(f"\nPreview saved to: {self.config.preview_file_path}")
 
     def load_preview_file(self) -> List[TimeEntry]:
