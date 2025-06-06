@@ -13,6 +13,9 @@
   "static_tasks_file": "static_tasks.json",
   "log_level": "DEBUG",
   "log_file": "activitywatch-tempo.log",
+  "lunch_enabled": false,
+  "lunch_time": "13:00",
+  "lunch_duration_minutes": 30,
   "sequential_time_allocation": {
     "enabled": true,
     "work_start_time": "08:30",

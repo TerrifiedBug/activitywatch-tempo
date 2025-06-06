@@ -48,6 +48,10 @@ class Config:
     minimum_activity_duration_seconds: int = 60
     jira_ticket_pattern: str = "SE-\\d+"
     excluded_apps: List[str] = None
+    # Lunch break configuration
+    lunch_enabled: bool = False
+    lunch_time: str = "13:00"
+    lunch_duration_minutes: int = 30
     # Sequential time allocation settings
     sequential_allocation_enabled: bool = True
     work_start_time: str = "08:00"
@@ -73,6 +77,8 @@ class WindowMapping:
     pattern: str
     jira_key: str
     description: str
+    match_type: str = "both"  # "title", "app", or "both"
+    enabled: bool = True
 
 @dataclass
 class TimeSlot:
@@ -138,12 +144,22 @@ class ActivityWatchProcessor:
         for mapping in self.window_mappings:
             # Use case-insensitive matching by default
             flags = re.IGNORECASE
+            match_found = False
 
-            if re.search(mapping.pattern, window_title, flags) or re.search(mapping.pattern, app_name, flags):
-                logger.info(f"[MATCH] Mapping matched: '{mapping.name}' -> {mapping.jira_key}")
+            # Check based on match_type
+            if mapping.match_type == "title":
+                match_found = re.search(mapping.pattern, window_title, flags) is not None
+            elif mapping.match_type == "app":
+                match_found = re.search(mapping.pattern, app_name, flags) is not None
+            else:  # "both" or default
+                match_found = (re.search(mapping.pattern, window_title, flags) is not None or
+                             re.search(mapping.pattern, app_name, flags) is not None)
+
+            if match_found:
+                logger.info(f"[MATCH] Mapping matched: '{mapping.name}' -> {mapping.jira_key} (match_type: {mapping.match_type})")
                 return (mapping.jira_key, mapping.description)
             else:
-                logger.debug(f"[NO MATCH] Pattern '{mapping.pattern}' did not match title: '{window_title}' or app: '{app_name}'")
+                logger.debug(f"[NO MATCH] Pattern '{mapping.pattern}' (match_type: {mapping.match_type}) did not match title: '{window_title}' or app: '{app_name}'")
 
         logger.debug(f"[SEARCH] No mappings matched for: '{window_title}' (app: '{app_name}')")
         return None
@@ -356,7 +372,36 @@ class ActivityWatchProcessor:
             logger.warning(f"Total time ({total_seconds/3600:.1f}h) exceeds daily limit ({self.config.working_hours_per_day}h) by {excess_hours:.1f}h")
             logger.warning("Manual adjustment required in preview file before submission")
 
+            # Show which items can't fit in the daily limit
+            self.log_overflow_items(entries, max_seconds)
+
         return entries  # Return unchanged - no automatic scaling
+
+    def log_overflow_items(self, entries: List[TimeEntry], max_seconds: int):
+        """Log specific items that exceed the daily limit"""
+        # Sort entries by duration (largest first) to show what could be reduced
+        sorted_entries = sorted(entries, key=lambda e: e.duration_seconds, reverse=True)
+
+        running_total = 0
+        items_that_fit = []
+        items_that_dont_fit = []
+
+        for entry in sorted_entries:
+            if running_total + entry.duration_seconds <= max_seconds:
+                running_total += entry.duration_seconds
+                items_that_fit.append(entry)
+            else:
+                items_that_dont_fit.append(entry)
+
+        if items_that_dont_fit:
+            logger.warning("Items that exceed daily working hours limit:")
+            for entry in items_that_dont_fit:
+                hours = entry.duration_seconds / 3600
+                entry_type = "STATIC" if entry.is_static_task else "ACTIVITY"
+                logger.warning(f"  - {entry.jira_key}: {hours:.2f}h ({entry_type}) - {entry.description}")
+
+            total_overflow_hours = sum(e.duration_seconds for e in items_that_dont_fit) / 3600
+            logger.warning(f"Total overflow: {total_overflow_hours:.2f}h from {len(items_that_dont_fit)} items")
 
     def parse_time_string(self, time_str: str, date: datetime) -> datetime:
         """Parse time string (HH:MM) and combine with date"""
@@ -366,27 +411,48 @@ class ActivityWatchProcessor:
         return datetime.combine(date.date(), time(hour, minute))
 
     def calculate_time_slots(self, static_tasks: List[TimeEntry], date: datetime) -> List[TimeSlot]:
-        """Calculate available time slots between static tasks"""
+        """Calculate available time slots between static tasks and lunch break"""
         work_start = self.parse_time_string(self.config.work_start_time, date)
         work_end = self.parse_time_string(self.config.work_end_time, date)
         gap_duration = timedelta(minutes=self.config.gap_minutes)
 
-        # Sort static tasks by start time
-        static_tasks_sorted = sorted(static_tasks, key=lambda t: t.start_time)
+        # Combine static tasks with lunch break if enabled
+        all_blocked_times = list(static_tasks)
+
+        if self.config.lunch_enabled:
+            lunch_start = self.parse_time_string(self.config.lunch_time, date)
+            lunch_duration = timedelta(minutes=self.config.lunch_duration_minutes)
+
+            # Create a virtual lunch "task" for time slot calculation
+            lunch_entry = TimeEntry(
+                jira_key="LUNCH",
+                duration_seconds=self.config.lunch_duration_minutes * 60,
+                start_time=lunch_start,
+                description="Lunch break (blocked time)",
+                is_static_task=True
+            )
+            all_blocked_times.append(lunch_entry)
+            logger.debug(f"[LUNCH] Added lunch break: {lunch_start.strftime('%H:%M')} ({self.config.lunch_duration_minutes}min)")
+
+        # Sort all blocked times by start time
+        blocked_times_sorted = sorted(all_blocked_times, key=lambda t: t.start_time)
 
         slots = []
         current_time = work_start
 
-        for static_task in static_tasks_sorted:
-            # Add slot before static task if there's time
-            if current_time < static_task.start_time:
-                slots.append(TimeSlot(current_time, static_task.start_time))
+        for blocked_time in blocked_times_sorted:
+            # Add slot before blocked time if there's time
+            if current_time < blocked_time.start_time:
+                slots.append(TimeSlot(current_time, blocked_time.start_time))
 
-            # Move past static task (including gap)
-            task_end = static_task.start_time + timedelta(seconds=static_task.duration_seconds)
-            current_time = task_end + gap_duration
+            # Move past blocked time (including gap, but not for lunch)
+            time_end = blocked_time.start_time + timedelta(seconds=blocked_time.duration_seconds)
+            if blocked_time.jira_key == "LUNCH":
+                current_time = time_end  # No gap after lunch
+            else:
+                current_time = time_end + gap_duration
 
-        # Add final slot after last static task
+        # Add final slot after last blocked time
         if current_time < work_end:
             slots.append(TimeSlot(current_time, work_end))
 
@@ -706,6 +772,10 @@ class AutomationManager:
                 minimum_activity_duration_seconds=config_data.get('minimum_activity_duration_seconds', 60),
                 jira_ticket_pattern=config_data.get('jira_ticket_pattern', 'SE-\\d+'),
                 excluded_apps=config_data.get('excluded_apps', []),
+                # Lunch break configuration
+                lunch_enabled=config_data.get('lunch_enabled', False),
+                lunch_time=config_data.get('lunch_time', '13:00'),
+                lunch_duration_minutes=config_data.get('lunch_duration_minutes', 30),
                 # Sequential time allocation settings
                 sequential_allocation_enabled=seq_config.get('enabled', True),
                 work_start_time=seq_config.get('work_start_time', '08:00'),
@@ -758,15 +828,19 @@ class AutomationManager:
 
             mappings = []
             for mapping_data in mappings_data.get('mappings', []):
-                mapping = WindowMapping(
-                    name=mapping_data['name'],
-                    pattern=mapping_data['pattern'],
-                    jira_key=mapping_data['jira_key'],
-                    description=mapping_data['description']
-                )
-                mappings.append(mapping)
+                # Only load enabled mappings (default to True for backward compatibility)
+                if mapping_data.get('enabled', True):
+                    mapping = WindowMapping(
+                        name=mapping_data['name'],
+                        pattern=mapping_data['pattern'],
+                        jira_key=mapping_data['jira_key'],
+                        description=mapping_data['description'],
+                        match_type=mapping_data.get('match_type', 'both'),  # Default to 'both' for backward compatibility
+                        enabled=mapping_data.get('enabled', True)
+                    )
+                    mappings.append(mapping)
 
-            logger.info(f"Loaded {len(mappings)} mappings")
+            logger.info(f"Loaded {len(mappings)} enabled mappings")
             return mappings
 
         except FileNotFoundError:

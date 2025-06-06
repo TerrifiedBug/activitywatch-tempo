@@ -4,7 +4,7 @@ Automatically populate your Jira Tempo timesheets using ActivityWatch data, with
 
 ## Overview
 
-This tool bridges ActivityWatch (time tracking) with Jira Tempo (timesheet management) to automate the tedious process of logging work hours. It analyzes your computer activity, extracts Jira ticket references, categorizes work types, and automatically submits time entries to Tempo.
+This tool bridges ActivityWatch (time tracking) with Jira Tempo (timesheet management) to automate the tedious process of logging work hours. It analyzes your computer activity, extracts Jira ticket references, and automatically submits time entries to Tempo.
 
 ## Features
 
@@ -12,7 +12,6 @@ This tool bridges ActivityWatch (time tracking) with Jira Tempo (timesheet manag
 
 - **Jira Ticket Detection**: Automatically detects SE-prefixed tickets in window titles
 - **Static Task Management**: Configurable daily/weekly recurring tasks (standup, admin, etc.)
-- **Activity Categorization**: Intelligently categorizes work as Development, Meetings, Research, etc.
 - **Smart Time Management**: User-controlled overflow handling with intelligent suggestions
 - **Automatic Worker ID Detection**: Auto-detects worker ID from PAT token
 
@@ -31,10 +30,16 @@ This tool bridges ActivityWatch (time tracking) with Jira Tempo (timesheet manag
 
 ### ✅ Window Title Mappings
 
-- **Static Mappings**: Map specific window titles to Jira tickets (e.g., "ZScaler TAM Meet" → SE-1234)
-- **Regex Patterns**: Flexible pattern matching for recurring activities
+- **Flexible Pattern Matching**: Map specific window titles or app names to Jira tickets
+- **Individual Control**: Enable/disable each mapping independently
+- **Match Types**: Target window titles, app names, or both
 - **Custom Descriptions**: Override default descriptions with meaningful text
-- **Activity Type Assignment**: Automatically categorize mapped activities
+
+### ✅ Lunch Break Support
+
+- **Configurable Lunch Breaks**: Set lunch time and duration to block time slots
+- **No Jira Entries**: Lunch breaks don't create time entries (as Tempo expects)
+- **Seamless Integration**: Works with sequential time allocation
 
 ### ✅ Robust Integration
 
@@ -71,13 +76,6 @@ aw-watcher-afk &
 2. Create API token
 3. Save securely
 
-#### Tempo API Token
-
-1. In Jira, go to Apps → Tempo → Settings
-2. Navigate to API Integration
-3. Generate new token
-4. Save securely
-
 ## Installation
 
 ### 1. Clone Repository
@@ -88,8 +86,6 @@ cd activitywatch-tempo
 ```
 
 ### 2. Setup Virtual Environment (Recommended)
-
-Using a virtual environment is the best practice to avoid dependency conflicts:
 
 ```bash
 # Create virtual environment
@@ -107,8 +103,6 @@ pip install -r requirements.txt
 
 ### 3. Create Configuration
 
-The configuration file is already named `config.json` and ready to use.
-
 Edit `config.json` with your details:
 
 ```json
@@ -121,12 +115,9 @@ Edit `config.json` with your details:
   "excluded_apps": ["Slack", "Personal Browser"],
   "minimum_activity_duration_seconds": 60,
   "time_rounding_minutes": 30,
-  "preview_file_path": "tempo_preview.json",
-  "default_processing_mode": "daily",
-  "mappings_file": "mappings.json",
-  "static_tasks_file": "static_tasks.json",
-  "log_level": "DEBUG",
-  "log_file": "activitywatch-tempo.log",
+  "lunch_enabled": false,
+  "lunch_time": "13:00",
+  "lunch_duration_minutes": 30,
   "sequential_time_allocation": {
     "enabled": true,
     "work_start_time": "08:30",
@@ -139,7 +130,7 @@ Edit `config.json` with your details:
 
 ### 4. Configure Window Mappings
 
-Edit `mappings.json` to map specific window titles to Jira tickets:
+Edit `mappings.json` to map specific window titles or apps to Jira tickets:
 
 ```json
 {
@@ -148,28 +139,35 @@ Edit `mappings.json` to map specific window titles to Jira tickets:
       "name": "ZScaler TAM Meetings",
       "pattern": "ZScaler TAM Meet",
       "jira_key": "SE-1234",
-      "description": "ZScaler TAM vendor call"
+      "description": "ZScaler TAM vendor call",
+      "match_type": "title",
+      "enabled": true
     },
     {
-      "name": "Sprint Planning",
-      "pattern": "Twitch|Sprint Planning|Planning Meeting",
-      "jira_key": "SE-PLANNING",
-      "description": "Sprint planning session"
+      "name": "Twitch App Usage",
+      "pattern": "Twitch",
+      "jira_key": "SE-twitch",
+      "description": "Twitch streaming activities",
+      "match_type": "app",
+      "enabled": true
     },
     {
-      "name": "Vendor Calls",
-      "pattern": "Vendor Call|Partner Meeting|External Meeting",
-      "jira_key": "SE-VENDOR",
-      "description": "External vendor/partner call"
+      "name": "Visual Studio Code",
+      "pattern": "Visual Studio Code|Code",
+      "jira_key": "SE-DEVELOPMENT",
+      "description": "Development work in VS Code",
+      "match_type": "app",
+      "enabled": false
     }
-  ],
-  "settings": {
-    "case_sensitive": false,
-    "priority": "first_match",
-    "fallback_to_ticket_detection": true
-  }
+  ]
 }
 ```
+
+**Match Types:**
+
+- `"title"` - Match only window titles
+- `"app"` - Match only application names
+- `"both"` - Match either (default)
 
 ### 5. Configure Static Tasks
 
@@ -209,49 +207,7 @@ Edit `static_tasks.json` to define daily and weekly recurring tasks:
 }
 ```
 
-## Running the Script
-
-### Prerequisites Check
-
-Before running, ensure:
-
-- ✅ **ActivityWatch is running**: Check with `curl http://localhost:5600/api/0/buckets`
-- ✅ **Virtual environment activated**: `source venv/bin/activate` (or `venv\Scripts\activate` on Windows)
-- ✅ **Configuration complete**: API tokens set in `config.json`
-- ✅ **Window mappings configured**: Custom mappings in `window_mappings.json`
-
-### Running Options
-
-#### Option A: Manual Daily/Weekly Processing (Recommended)
-
-```bash
-# Always activate virtual environment first
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-
-# Generate preview for yesterday
-python activitywatch-tempo.py --preview
-
-# Review and edit tempo_preview.json manually
-# Then submit
-python activitywatch-tempo.py --submit
-```
-
-#### Option B: Automated Scheduling
-
-```bash
-# Run scheduler (processes previous day at 8 AM daily)
-python activitywatch-tempo.py --scheduler
-```
-
-#### Option C: Development/Testing
-
-```bash
-# Test with specific date
-python activitywatch-tempo.py --preview --date 2024-01-15
-
-# Direct processing (skip preview)
-python activitywatch-tempo.py --direct --date 2024-01-15
-```
+## Usage
 
 ### Recommended Daily Workflow
 
@@ -260,15 +216,14 @@ python activitywatch-tempo.py --direct --date 2024-01-15
 3. **Review**: Edit the generated `tempo_preview.json` file to adjust time entries
 4. **Submit**: Run `python activitywatch-tempo.py --submit`
 
-## Usage
-
 ### Preview/Edit Workflow (Recommended)
-
-The script now supports a two-stage workflow for better control:
 
 #### Stage 1: Generate Preview
 
 ```bash
+# Always activate virtual environment first
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+
 # Generate daily preview for yesterday
 python activitywatch-tempo.py --preview
 
@@ -277,12 +232,16 @@ python activitywatch-tempo.py --preview --weekly
 
 # Generate preview for specific date
 python activitywatch-tempo.py --preview --date 2024-01-15
-
-# Generate weekly preview for specific week
-python activitywatch-tempo.py --preview --weekly --date 2024-01-15
 ```
 
 This creates a `tempo_preview.json` file with all detected time entries that you can manually review and edit.
+
+#### Stage 2: Submit After Review
+
+```bash
+# Submit the reviewed entries to Tempo
+python activitywatch-tempo.py --submit
+```
 
 ### Preview File Format
 
@@ -325,13 +284,6 @@ You can manually edit the preview file to:
 - **Remove entries**: Delete unwanted entries
 - **Split time**: Divide long sessions across multiple tickets
 
-#### Stage 2: Submit After Review
-
-```bash
-# Submit the reviewed entries to Tempo
-python activitywatch-tempo.py --submit
-```
-
 ### Direct Processing (Legacy Mode)
 
 For immediate submission without preview:
@@ -354,9 +306,91 @@ python activitywatch-tempo.py --direct --weekly
 python activitywatch-tempo.py --scheduler
 ```
 
-### System Service Setup (Optional)
+## How It Works
 
-For automatic startup and background processing, you can set up the script as a system service:
+### Data Collection
+
+- ActivityWatch monitors window titles and application usage
+- Data stored locally in SQLite database
+- No sensitive information leaves your machine until processing
+
+### Activity Analysis
+
+```python
+# Example window title processing
+"JIRA - SE-1234: Fix login bug - Chrome" → Ticket: SE-1234
+"Microsoft Teams - SE-5678 Sprint Planning" → Ticket: SE-5678
+"Daily Standup - Microsoft Teams" → Mapped to SE-STANDUP
+```
+
+### Time Entry Creation
+
+- Groups fragmented activities by Jira ticket
+- Applies minimum duration filters (60 seconds default)
+- Adds static tasks automatically
+- Validates total doesn't exceed daily working hours
+
+### Tempo Submission
+
+- Validates Jira tickets exist
+- Submits time entries via Tempo API
+- Provides detailed logging for troubleshooting
+
+## Configuration Options
+
+| Setting                             | Description                    | Default            |
+| ----------------------------------- | ------------------------------ | ------------------ |
+| `working_hours_per_day`             | Maximum hours per day          | 7.5                |
+| `time_rounding_minutes`             | Round time to nearest interval | 15 (15, 30, or 60) |
+| `jira_ticket_pattern`               | Regex for ticket detection     | SE-\\d+            |
+| `minimum_activity_duration_seconds` | Minimum trackable activity     | 60                 |
+| `excluded_apps`                     | Apps to ignore                 | []                 |
+| `lunch_enabled`                     | Enable lunch break blocking    | false              |
+| `lunch_time`                        | Lunch start time (HH:MM)       | 13:00              |
+| `lunch_duration_minutes`            | Lunch duration in minutes      | 30                 |
+| `log_level`                         | Logging verbosity level        | INFO               |
+
+## Troubleshooting
+
+### Common Issues
+
+#### ActivityWatch Not Running
+
+```bash
+# Check if ActivityWatch is running
+curl http://localhost:5600/api/0/buckets
+
+# Start if needed
+aw-server &
+aw-watcher-window &
+```
+
+#### No Jira Tickets Detected
+
+- Ensure window titles contain "SE-" pattern
+- Check `jira_ticket_pattern` in config
+- Verify ActivityWatch is collecting window data
+- Check if window mappings are enabled
+
+#### Tempo API Errors
+
+- Verify API token has correct permissions
+- Check Jira URL format (include https://)
+- Ensure tickets exist in Jira before time logging
+
+#### Time Validation Issues
+
+- Check if total time exceeds daily working hours
+- Review overflow warnings in logs
+- Edit preview file to adjust time entries
+
+### Logging
+
+The script logs to `activitywatch-tempo.log` by default. Set `log_level` to `DEBUG` in config for detailed troubleshooting information.
+
+## System Service Setup (Optional)
+
+For automatic startup and background processing:
 
 #### Windows (Task Scheduler)
 
@@ -414,233 +448,6 @@ WantedBy=multi-user.target
 
 Enable with: `sudo systemctl enable activitywatch-tempo && sudo systemctl start activitywatch-tempo`
 
-## How It Works
-
-### ActivityWatch Integration
-
-The script connects to ActivityWatch through its REST API that runs locally on your machine:
-
-#### Connection Details
-
-- **API Endpoint**: `http://localhost:5600` (ActivityWatch's default API)
-- **Data Source**: Local SQLite databases on your machine
-- **Privacy**: No data leaves your machine until you choose to submit to Jira/Tempo
-
-#### Data Retrieved
-
-From ActivityWatch, the script gets:
-
-- **Window titles** (e.g., "JIRA - SE-1234: Fix login bug - Chrome")
-- **Application names** (e.g., "Google Chrome", "Microsoft Teams")
-- **Timestamps** (when each window was active)
-- **Duration** (how long each window was in focus)
-
-#### API Calls Made
-
-```python
-# Get list of available data buckets
-GET http://localhost:5600/api/0/buckets
-
-# Get events from the window watcher bucket
-GET http://localhost:5600/api/0/buckets/{bucket_name}/events?start=2024-01-14&end=2024-01-15
-```
-
-### 1. Data Collection
-
-- ActivityWatch monitors window titles and application usage
-- Data stored locally in SQLite database
-- No sensitive information leaves your machine until processing
-
-### 2. Activity Analysis
-
-```python
-# Example window title processing
-"JIRA - SE-1234: Fix login bug - Chrome" → Ticket: SE-1234, Type: Development
-"Microsoft Teams - SE-5678 Sprint Planning" → Ticket: SE-5678, Type: Meeting
-"Daily Standup - Microsoft Teams" → Ticket: SE-STANDUP, Type: Meeting
-```
-
-### 3. Time Entry Creation
-
-- Groups fragmented activities by Jira ticket
-- Applies minimum duration filters (5 minutes default)
-- Adds daily standup entry automatically
-- Validates total doesn't exceed 7.5 hours
-
-### 4. Tempo Submission
-
-- Validates Jira tickets exist
-- Submits time entries via Tempo API
-- Provides detailed logging for troubleshooting
-
-## Configuration Options
-
-| Setting                             | Description                    | Default                 |
-| ----------------------------------- | ------------------------------ | ----------------------- |
-| `working_hours_per_day`             | Maximum hours per day          | 7.5                     |
-| `time_rounding_minutes`             | Round time to nearest interval | 15 (15, 30, or 60)      |
-| `jira_ticket_pattern`               | Regex for ticket detection     | SE-\\d+                 |
-| `minimum_activity_duration_seconds` | Minimum trackable activity     | 300                     |
-| `excluded_apps`                     | Apps to ignore                 | []                      |
-| `default_processing_mode`           | Default mode (daily/weekly)    | daily                   |
-| `mappings_file`                     | Path to window mappings config | mappings.json           |
-| `static_tasks_file`                 | Path to static tasks config    | static_tasks.json       |
-| `log_level`                         | Logging verbosity level        | INFO                    |
-| `log_file`                          | Log file path                  | activitywatch-tempo.log |
-
-## Workflow Examples
-
-### Typical Daily Workflow
-
-1. **9:30 AM**: Automatic standup entry (SE-STANDUP, 30 min)
-2. **Work Sessions**: Open tickets in browser/IDE
-   - "SE-1234: User authentication" → Tracked automatically
-   - "SE-5678: Database optimization" → Tracked automatically
-3. **Teams Meetings**:
-   - With Jira ID: "SE-9999 Sprint Review" → Tracked automatically
-   - Without ID: Manual linking required (future enhancement)
-4. **Next Day 8:00 AM**: Previous day automatically submitted to Tempo
-
-### Manual Teams Meeting Linking
-
-For meetings without Jira IDs in titles:
-
-```python
-# Future enhancement - manual override
-manager.add_manual_entry(
-    jira_key="SE-1111",
-    start_time=datetime(2024, 1, 15, 14, 0),
-    duration_minutes=60,
-    description="Sprint retrospective meeting"
-)
-```
-
-## Troubleshooting
-
-### Common Issues
-
-#### ActivityWatch Not Running
-
-```bash
-# Check if ActivityWatch is running
-curl http://localhost:5600/api/0/buckets
-
-# Start if needed
-aw-server &
-aw-watcher-window &
-```
-
-#### No Jira Tickets Detected
-
-- Ensure window titles contain "SE-" pattern
-- Check `jira_ticket_pattern` in config
-- Verify ActivityWatch is collecting window data
-
-#### Tempo API Errors
-
-- Verify API token has correct permissions
-- Check Jira URL format (include https://)
-- Ensure tickets exist in Jira before time logging
-
-#### Time Validation Issues
-
-```python
-# Debug time entries before submission
-entries = processor.process_daily_activities(date)
-for entry in entries:
-    print(f"{entry.jira_key}: {entry.duration_seconds/3600:.2f}h")
-```
-
-### Logging
-
-Enable debug logging:
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-```
-
-## Recent Improvements (June 2025)
-
-### User Control Enhancement
-
-**Enhanced Overflow Handling**: Removed automatic proportional scaling when over daily limits. Users now have full control over time adjustments with intelligent suggestions for what to reduce.
-
-**Smart Suggestions**: When time exceeds daily limits, the system analyzes entries and suggests specific reductions based on:
-
-- Admin/overhead tasks that can be reduced
-- Short activities that might be removed
-- General/research activities that could be trimmed
-- Multiple entries for the same ticket that could be consolidated
-
-**Submission Validation**: Added validation that blocks submission when still over daily limits, requiring manual adjustment before proceeding.
-
-### Configuration Simplification
-
-**Removed Username Requirement**: Eliminated unnecessary `jira_username` field since PAT tokens don't require it. Configuration is now simpler and matches modern authentication practices.
-
-**Fixed Duplicate Auto-Detection**: Resolved issue where worker ID was being auto-detected twice during initialization, eliminating duplicate log messages.
-
-### Authentication Improvements
-
-**Single Token Authentication**: Simplified from dual-token system to single `jira_pat_token` that handles both Jira and Tempo API access.
-
-**Automatic Worker ID Detection**: System now auto-detects worker ID from PAT token, eliminating manual configuration in most cases.
-
-### Bug Fixes
-
-**Sequential Time Allocation**: Fixed critical issue where multiple tasks were assigned to the same timestamp due to time rounding happening after sequential allocation.
-
-**Duration Filtering**: Fixed inconsistent duration filtering that prevented window mappings from working correctly when activity duration was between 60-300 seconds.
-
-## Previous Bug Fixes
-
-### Duration Filtering Fix (January 2025)
-
-**Issue**: Window title mappings (like Twitch → SE-twitch) were not working when total activity duration was between 60-300 seconds, despite having `minimum_activity_duration_seconds` set to 60 in config.json.
-
-**Root Cause**: The code had inconsistent duration filtering logic:
-
-- Individual events were filtered using the config setting (60s) for non-mapped activities only
-- Activity blocks were filtered using a hardcoded 300-second (5-minute) threshold
-- This meant mapped activities would be grouped correctly but then filtered out if total duration was between 60-300 seconds
-
-**Solution**:
-
-- Removed early filtering of individual events during processing
-- Changed hardcoded 300s threshold to use `minimum_activity_duration_seconds` from config
-- Now all duration filtering uses the consistent config setting
-
-**Result**: Window mappings now work correctly for activities with durations ≥ your configured minimum (default: 60 seconds).
-
-## Future Enhancements
-
-### Planned Features
-
-- [ ] **Web UI**: Manual meeting linking interface
-- [ ] **AI Categorization**: GPT-powered activity classification
-- [ ] **Multiple Ticket Patterns**: Support different project prefixes
-- [ ] **Time Splitting**: Distribute long sessions across multiple tickets
-- [ ] **Slack Integration**: Extract Jira references from Slack messages
-- [ ] **Mobile Time Tracking**: Integration with mobile time tracking apps
-
-### AI-Powered Improvements
-
-```python
-# Future: AI-powered activity categorization
-def ai_categorize_activity(window_title, app_name, context):
-    """Use GPT to intelligently categorize ambiguous activities"""
-    prompt = f"""
-    Categorize this work activity:
-    App: {app_name}
-    Window: {window_title}
-    Context: {context}
-
-    Categories: Development, Meeting, Research, Documentation, Testing
-    """
-    # Implementation with OpenAI API
-```
-
 ## Security Considerations
 
 - **API Tokens**: Store securely, never commit to version control
@@ -663,7 +470,6 @@ MIT License - see LICENSE file for details
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/your-username/activitywatch-tempo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/activitywatch-tempo/discussions)
 - **ActivityWatch**: [Official Documentation](https://docs.activitywatch.net/)
 - **Tempo API**: [Tempo REST API Documentation](https://tempo-io.github.io/tempo-api-docs/)
 
