@@ -1,0 +1,5 @@
+memory-bank/
+.clinerules
+*.log
+tests/
+tempotests.txt

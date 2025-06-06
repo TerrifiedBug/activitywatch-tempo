@@ -1,0 +1,53 @@
+{
+  "daily_tasks": [
+    {
+      "name": "Daily Standup",
+      "jira_key": "SE-STANDUP",
+      "time": "09:30",
+      "duration_minutes": 60,
+      "description": "Daily standup meeting",
+      "activity_type": "Meeting",
+      "enabled": true
+    },
+    {
+      "name": "Email Review",
+      "jira_key": "SE-ADMIN",
+      "time": "08:30",
+      "duration_minutes": 15,
+      "description": "Daily email review and admin tasks",
+      "activity_type": "Administration",
+      "enabled": true
+    },
+    {
+      "name": "End of Day Review",
+      "jira_key": "SE-ADMIN",
+      "time": "17:00",
+      "duration_minutes": 15,
+      "description": "End of day planning and review",
+      "activity_type": "Administration",
+      "enabled": false
+    }
+  ],
+  "weekly_tasks": [
+    {
+      "name": "Sprint Planning",
+      "jira_key": "SE-PLANNING",
+      "day_of_week": "monday",
+      "time": "10:00",
+      "duration_minutes": 120,
+      "description": "Weekly sprint planning session",
+      "activity_type": "Meeting",
+      "enabled": false
+    },
+    {
+      "name": "Sprint Retrospective",
+      "jira_key": "SE-RETRO",
+      "day_of_week": "friday",
+      "time": "15:00",
+      "duration_minutes": 60,
+      "description": "Weekly sprint retrospective",
+      "activity_type": "Meeting",
+      "enabled": false
+    }
+  ]
+}

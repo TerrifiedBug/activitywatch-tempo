@@ -1,0 +1,65 @@
+{
+  "mappings": [
+    {
+      "name": "ZScaler TAM Meetings",
+      "pattern": "ZScaler TAM Meet",
+      "jira_key": "SE-1234",
+      "activity_type": "Meeting",
+      "description": "ZScaler TAM vendor call"
+    },
+    {
+      "name": "Daily Standup Alternative",
+      "pattern": "Daily Scrum|Morning Standup",
+      "jira_key": "SE-STANDUP",
+      "activity_type": "Meeting",
+      "description": "Daily standup meeting"
+    },
+    {
+      "name": "Sprint Planning",
+      "pattern": "Sprint Planning|Planning Meeting",
+      "jira_key": "SE-PLANNING",
+      "activity_type": "Meeting",
+      "description": "Sprint planning session"
+    },
+    {
+      "name": "Retrospective",
+      "pattern": "Retrospective|Retro Meeting",
+      "jira_key": "SE-RETRO",
+      "activity_type": "Meeting",
+      "description": "Sprint retrospective"
+    },
+    {
+      "name": "Vendor Calls",
+      "pattern": "Vendor Call|Partner Meeting|External Meeting",
+      "jira_key": "SE-VENDOR",
+      "activity_type": "Meeting",
+      "description": "External vendor/partner call"
+    },
+    {
+      "name": "Training Sessions",
+      "pattern": "activitywatch-tempo.py|Training|Workshop|Learning",
+      "jira_key": "SE-TRAINING",
+      "activity_type": "Training",
+      "description": "Training and development"
+    },
+    {
+      "name": "Code Review",
+      "pattern": "Code Review|PR Review|Pull Request",
+      "jira_key": "SE-REVIEW",
+      "activity_type": "Development",
+      "description": "Code review activities"
+    },
+    {
+      "name": "Twitch",
+      "pattern": "Twitch",
+      "jira_key": "SE-twitch",
+      "activity_type": "Development",
+      "description": "Code review activities"
+    }
+  ],
+  "settings": {
+    "case_sensitive": false,
+    "priority": "first_match",
+    "fallback_to_ticket_detection": true
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "jira_url": "https://jira.domain.com",
+  "jira_username": "username",
+  "jira_pat_token": "your-jira-pat-token",
+  "worker_id": "auto",
+  "working_hours_per_day": 8,
+  "jira_ticket_pattern": "SE-\\d+",
+  "excluded_apps": ["Slack", "Personal Browser"],
+  "minimum_activity_duration_seconds": 60,
+  "time_rounding_minutes": 30,
+  "preview_file_path": "tempo_preview.json",
+  "default_processing_mode": "daily",
+  "mappings_file": "mappings.json",
+  "static_tasks_file": "static_tasks.json",
+  "log_level": "DEBUG",
+  "log_file": "activitywatch-tempo.log",
+  "sequential_time_allocation": {
+    "enabled": true,
+    "work_start_time": "08:30",
+    "work_end_time": "17:00",
+    "gap_minutes": 0,
+    "static_tasks_priority": true
+  }
+}
