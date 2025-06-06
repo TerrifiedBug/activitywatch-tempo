@@ -6,7 +6,6 @@
       "time": "09:30",
       "duration_minutes": 60,
       "description": "Daily standup meeting",
-      "activity_type": "Meeting",
       "enabled": true
     },
     {
@@ -15,7 +14,6 @@
       "time": "08:30",
       "duration_minutes": 15,
       "description": "Daily email review and admin tasks",
-      "activity_type": "Administration",
       "enabled": true
     },
     {
@@ -24,7 +22,6 @@
       "time": "17:00",
       "duration_minutes": 15,
       "description": "End of day planning and review",
-      "activity_type": "Administration",
       "enabled": false
     }
   ],
@@ -36,7 +33,6 @@
       "time": "10:00",
       "duration_minutes": 120,
       "description": "Weekly sprint planning session",
-      "activity_type": "Meeting",
       "enabled": false
     },
     {
@@ -46,7 +42,6 @@
       "time": "15:00",
       "duration_minutes": 60,
       "description": "Weekly sprint retrospective",
-      "activity_type": "Meeting",
       "enabled": false
     }
   ]

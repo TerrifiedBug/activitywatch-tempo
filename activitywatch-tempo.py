@@ -28,7 +28,6 @@ class TimeEntry:
     duration_seconds: int
     start_time: datetime
     description: str
-    activity_type: str = "Development"
     is_static_task: bool = False
     original_timestamp: datetime = None
 
@@ -64,7 +63,6 @@ class StaticTask:
     time: str
     duration_minutes: int
     description: str
-    activity_type: str
     enabled: bool
     day_of_week: str = None  # For weekly tasks
 
@@ -74,7 +72,6 @@ class WindowMapping:
     name: str
     pattern: str
     jira_key: str
-    activity_type: str
     description: str
 
 @dataclass
@@ -144,7 +141,7 @@ class ActivityWatchProcessor:
 
             if re.search(mapping.pattern, window_title, flags) or re.search(mapping.pattern, app_name, flags):
                 logger.info(f"[MATCH] Mapping matched: '{mapping.name}' -> {mapping.jira_key}")
-                return (mapping.jira_key, mapping.activity_type, mapping.description)
+                return (mapping.jira_key, mapping.description)
             else:
                 logger.debug(f"[NO MATCH] Pattern '{mapping.pattern}' did not match title: '{window_title}' or app: '{app_name}'")
 
@@ -222,7 +219,6 @@ class ActivityWatchProcessor:
                         duration_seconds=task.duration_minutes * 60,
                         start_time=datetime.combine(date.date(), task_time),
                         description=task.description,
-                        activity_type=task.activity_type,
                         is_static_task=True,
                         original_timestamp=datetime.combine(date.date(), task_time)
                     )
@@ -249,20 +245,18 @@ class ActivityWatchProcessor:
 
             # Determine jira_key and activity details
             jira_key = None
-            activity_type = "General"
             mapped_description = None
 
             # Check for window mappings first
             mapping_result = self.check_window_mappings(window_title, app_name)
             if mapping_result:
-                jira_key, activity_type, mapped_description = mapping_result
+                jira_key, mapped_description = mapping_result
                 logger.debug(f"[MAPPED] Mapped to: {jira_key} via window mapping")
                 processed_count += 1
             else:
                 # Try to extract Jira ticket from title
                 jira_key = self.extract_jira_tickets(window_title, app_name)
                 if jira_key:
-                    activity_type = self.categorize_activity(window_title, app_name)
                     logger.debug(f"[TICKET] Found Jira ticket: {jira_key}")
                     processed_count += 1
                 else:
@@ -275,7 +269,6 @@ class ActivityWatchProcessor:
                 activity_blocks[jira_key] = {
                     'total_duration': 0,
                     'activities': [],
-                    'activity_type': activity_type,
                     'mapped_description': mapped_description
                 }
                 logger.debug(f"[NEW] Created new activity block for: {jira_key}")
@@ -313,7 +306,6 @@ class ActivityWatchProcessor:
                 duration_seconds=total_duration,
                 start_time=min(act['timestamp'] for act in block['activities']),
                 description=description,
-                activity_type=block['activity_type'],
                 is_static_task=False,
                 original_timestamp=min(act['timestamp'] for act in block['activities'])
             )
@@ -770,7 +762,6 @@ class AutomationManager:
                     name=mapping_data['name'],
                     pattern=mapping_data['pattern'],
                     jira_key=mapping_data['jira_key'],
-                    activity_type=mapping_data['activity_type'],
                     description=mapping_data['description']
                 )
                 mappings.append(mapping)
@@ -802,7 +793,6 @@ class AutomationManager:
                         time=task_data['time'],
                         duration_minutes=task_data['duration_minutes'],
                         description=task_data['description'],
-                        activity_type=task_data['activity_type'],
                         enabled=task_data['enabled']
                     )
                     tasks.append(task)
@@ -816,7 +806,6 @@ class AutomationManager:
                         time=task_data['time'],
                         duration_minutes=task_data['duration_minutes'],
                         description=task_data['description'],
-                        activity_type=task_data['activity_type'],
                         enabled=task_data['enabled'],
                         day_of_week=task_data.get('day_of_week')
                     )
@@ -855,8 +844,7 @@ class AutomationManager:
                     jira_key=task.jira_key,
                     duration_seconds=task.duration_minutes * 60,
                     start_time=datetime.combine(date.date(), task_time),
-                    description=task.description,
-                    activity_type=task.activity_type
+                    description=task.description
                 )
                 entries.append(entry)
                 logger.info(f"Added static task: {task.name} ({task.duration_minutes}min)")
@@ -904,7 +892,6 @@ class AutomationManager:
         # Group entries by type for analysis
         admin_entries = [e for e in entries if 'admin' in e.description.lower() or 'planning' in e.description.lower() or 'review' in e.description.lower()]
         short_entries = [e for e in entries if e.duration_seconds <= 1800]  # 30 minutes or less
-        general_entries = [e for e in entries if e.activity_type in ['General', 'Research']]
         duplicate_tickets = {}
 
         # Find duplicate tickets (multiple entries for same Jira key)
@@ -927,10 +914,6 @@ class AutomationManager:
                 hours = entry.duration_seconds / 3600
                 suggestions.append(f"{entry.jira_key} (Short activity): {hours:.1f}h → Could remove entirely (-{hours:.1f}h)")
 
-        if general_entries:
-            for entry in general_entries[:2]:  # Show top 2 general entries
-                hours = entry.duration_seconds / 3600
-                suggestions.append(f"{entry.jira_key} (General/Research): {hours:.1f}h → Could reduce or remove (-{hours:.1f}h)")
 
         if multi_entries:
             for jira_key, entry_list in list(multi_entries.items())[:2]:  # Show top 2
@@ -971,8 +954,7 @@ class AutomationManager:
                 "jira_key": entry.jira_key,
                 "duration_seconds": entry.duration_seconds,
                 "start_time": entry.start_time.isoformat(),
-                "comment": entry.description,
-                "activity_type": entry.activity_type
+                "comment": entry.description
             })
 
         with open(self.config.preview_file_path, 'w') as f:
@@ -1027,8 +1009,7 @@ class AutomationManager:
                     jira_key=entry_data["jira_key"],
                     duration_seconds=entry_data["duration_seconds"],
                     start_time=datetime.fromisoformat(entry_data["start_time"]),
-                    description=description,
-                    activity_type=entry_data["activity_type"]
+                    description=description
                 )
                 entries.append(entry)
 
