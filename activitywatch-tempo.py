@@ -356,21 +356,16 @@ class ActivityWatchProcessor:
         return rounded_seconds
 
     def validate_daily_hours(self, entries: List[TimeEntry]) -> List[TimeEntry]:
-        """Ensure daily hours don't exceed the maximum (rounding already applied)"""
+        """Check daily hours and warn if over limit (no automatic scaling)"""
         total_seconds = sum(entry.duration_seconds for entry in entries)
         max_seconds = self.config.working_hours_per_day * 3600
 
-        if total_seconds <= max_seconds:
-            return entries
+        if total_seconds > max_seconds:
+            excess_hours = (total_seconds - max_seconds) / 3600
+            logger.warning(f"Total time ({total_seconds/3600:.1f}h) exceeds daily limit ({self.config.working_hours_per_day}h) by {excess_hours:.1f}h")
+            logger.warning("Manual adjustment required in preview file before submission")
 
-        # Scale down all entries proportionally
-        scale_factor = max_seconds / total_seconds
-        logger.warning(f"Scaling down time entries by factor {scale_factor:.2f} to fit daily limit")
-
-        for entry in entries:
-            entry.duration_seconds = int(entry.duration_seconds * scale_factor)
-
-        return entries
+        return entries  # Return unchanged - no automatic scaling
 
     def parse_time_string(self, time_str: str, date: datetime) -> datetime:
         """Parse time string (HH:MM) and combine with date"""
@@ -889,9 +884,53 @@ class AutomationManager:
 
         return all_entries
 
+    def suggest_reductions(self, entries: List[TimeEntry], excess_seconds: int) -> List[str]:
+        """Analyze entries and suggest what to reduce when over daily limit"""
+        suggestions = []
+        excess_hours = excess_seconds / 3600
+
+        # Group entries by type for analysis
+        admin_entries = [e for e in entries if 'admin' in e.description.lower() or 'planning' in e.description.lower() or 'review' in e.description.lower()]
+        short_entries = [e for e in entries if e.duration_seconds <= 1800]  # 30 minutes or less
+        general_entries = [e for e in entries if e.activity_type in ['General', 'Research']]
+        duplicate_tickets = {}
+
+        # Find duplicate tickets (multiple entries for same Jira key)
+        for entry in entries:
+            if entry.jira_key in duplicate_tickets:
+                duplicate_tickets[entry.jira_key].append(entry)
+            else:
+                duplicate_tickets[entry.jira_key] = [entry]
+
+        multi_entries = {k: v for k, v in duplicate_tickets.items() if len(v) > 1}
+
+        # Generate suggestions based on analysis
+        if admin_entries:
+            total_admin_hours = sum(e.duration_seconds for e in admin_entries) / 3600
+            if total_admin_hours >= excess_hours:
+                suggestions.append(f"Admin/overhead tasks: {total_admin_hours:.1f}h total → Could reduce by {excess_hours:.1f}h")
+
+        if short_entries:
+            for entry in short_entries[:3]:  # Show top 3 short entries
+                hours = entry.duration_seconds / 3600
+                suggestions.append(f"{entry.jira_key} (Short activity): {hours:.1f}h → Could remove entirely (-{hours:.1f}h)")
+
+        if general_entries:
+            for entry in general_entries[:2]:  # Show top 2 general entries
+                hours = entry.duration_seconds / 3600
+                suggestions.append(f"{entry.jira_key} (General/Research): {hours:.1f}h → Could reduce or remove (-{hours:.1f}h)")
+
+        if multi_entries:
+            for jira_key, entry_list in list(multi_entries.items())[:2]:  # Show top 2
+                total_hours = sum(e.duration_seconds for e in entry_list) / 3600
+                suggestions.append(f"{jira_key} (Multiple entries): {total_hours:.1f}h total → Could consolidate and reduce")
+
+        return suggestions[:5]  # Return top 5 suggestions
+
     def create_preview_file(self, entries: List[TimeEntry], start_date: datetime, end_date: datetime, mode: str):
         """Create a preview file with time entries for manual review"""
         total_seconds = sum(entry.duration_seconds for entry in entries)
+        max_seconds = self.config.working_hours_per_day * 3600
 
         preview_data = {
             "generated_date": datetime.now().isoformat(),
@@ -901,8 +940,19 @@ class AutomationManager:
                 "mode": mode
             },
             "total_hours": round(total_seconds / 3600, 2),
+            "daily_limit": self.config.working_hours_per_day,
             "entries": []
         }
+
+        # Add overflow warning if over limit
+        if total_seconds > max_seconds:
+            excess_seconds = total_seconds - max_seconds
+            excess_hours = excess_seconds / 3600
+            preview_data["overflow_warning"] = {
+                "message": f"Total time ({preview_data['total_hours']}h) exceeds daily limit ({self.config.working_hours_per_day}h) by {excess_hours:.1f}h",
+                "excess_hours": round(excess_hours, 1),
+                "suggestions": self.suggest_reductions(entries, excess_seconds)
+            }
 
         for entry in entries:
             preview_data["entries"].append({
@@ -920,17 +970,35 @@ class AutomationManager:
         logger.info(f"Total entries: {len(entries)}")
         logger.info(f"Total hours: {preview_data['total_hours']}")
 
-        # Display summary
+        # Display summary with overflow warning
         print(f"\n=== PREVIEW SUMMARY ===")
         print(f"Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')} ({mode})")
         print(f"Total Hours: {preview_data['total_hours']}")
         print(f"Total Entries: {len(entries)}")
+
+        # Show overflow warning if applicable
+        if total_seconds > max_seconds:
+            excess_hours = (total_seconds - max_seconds) / 3600
+            print(f"\n⚠️  WARNING: Time Overflow Detected ⚠️")
+            print(f"Total Time: {preview_data['total_hours']}h ({excess_hours:.1f}h over {self.config.working_hours_per_day}h limit)")
+
+            suggestions = self.suggest_reductions(entries, total_seconds - max_seconds)
+            if suggestions:
+                print(f"\nSuggestions for reduction:")
+                for i, suggestion in enumerate(suggestions, 1):
+                    print(f"  {i}. {suggestion}")
+
+            print(f"\n📝 Edit {self.config.preview_file_path} to adjust entries before submitting.")
+            print(f"💡 Run 'python {sys.argv[0]} --submit' when ready.")
+        else:
+            print(f"\n✅ Time within daily limit ({self.config.working_hours_per_day}h)")
+            print(f"📝 Review {self.config.preview_file_path} and run 'python {sys.argv[0]} --submit' to submit.")
+
         print(f"\nEntries:")
         for entry in entries:
             hours = entry.duration_seconds / 3600
             print(f"  {entry.jira_key}: {hours:.2f}h - {entry.description}")
         print(f"\nPreview saved to: {self.config.preview_file_path}")
-        print(f"Edit the file manually, then run: python {sys.argv[0]} --submit")
 
     def load_preview_file(self) -> List[TimeEntry]:
         """Load time entries from preview file"""
@@ -969,12 +1037,30 @@ class AutomationManager:
         if not entries:
             return False
 
-        # Validate total hours
+        # Validate total hours against daily limit
         total_hours = sum(entry.duration_seconds for entry in entries) / 3600
+
+        # Check if still over daily limit (block submission)
+        if total_hours > self.config.working_hours_per_day:
+            excess_hours = total_hours - self.config.working_hours_per_day
+            print(f"\n❌ Submission blocked: Total time is {total_hours:.1f}h ({excess_hours:.1f}h over {self.config.working_hours_per_day}h limit)")
+            print(f"Please edit {self.config.preview_file_path} to reduce time by {excess_hours:.1f}h before submitting.")
+
+            # Show current suggestions for reduction
+            suggestions = self.suggest_reductions(entries, int(excess_hours * 3600))
+            if suggestions:
+                print(f"\nSuggestions for reduction:")
+                for i, suggestion in enumerate(suggestions, 1):
+                    print(f"  {i}. {suggestion}")
+
+            return False
+
+        # Check weekly limit (warning only, don't block)
         if total_hours > self.config.working_hours_per_day * 5:  # Max for a week
             logger.warning(f"Total hours ({total_hours:.2f}) exceeds weekly limit")
 
-        # Submit entries
+        # All validations passed - submit entries
+        print(f"\n✅ Submitting {len(entries)} entries ({total_hours:.1f}h total)...")
         success = self.jira_integration.submit_daily_entries(entries)
 
         if success:
@@ -982,6 +1068,10 @@ class AutomationManager:
             archive_name = f"{self.config.preview_file_path}.submitted_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             Path(self.config.preview_file_path).rename(archive_name)
             logger.info(f"Preview file archived as: {archive_name}")
+            print(f"✅ Successfully submitted all entries to Tempo!")
+            print(f"📁 Preview file archived as: {archive_name}")
+        else:
+            print(f"❌ Some entries failed to submit. Check logs for details.")
 
         return success
 
