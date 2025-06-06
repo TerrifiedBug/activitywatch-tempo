@@ -11,9 +11,10 @@ This tool bridges ActivityWatch (time tracking) with Jira Tempo (timesheet manag
 ### ✅ Automated Time Tracking
 
 - **Jira Ticket Detection**: Automatically detects SE-prefixed tickets in window titles
-- **Daily Standup Logging**: Adds preset 30-minute standup entries at 9:30 AM
+- **Static Task Management**: Configurable daily/weekly recurring tasks (standup, admin, etc.)
 - **Activity Categorization**: Intelligently categorizes work as Development, Meetings, Research, etc.
-- **Time Validation**: Ensures daily hours don't exceed 7.5 hours with proportional scaling
+- **Smart Time Management**: User-controlled overflow handling with intelligent suggestions
+- **Automatic Worker ID Detection**: Auto-detects worker ID from PAT token
 
 ### ✅ Smart Activity Processing
 
@@ -113,20 +114,26 @@ Edit `config.json` with your details:
 ```json
 {
   "jira_url": "https://your-company.atlassian.net",
-  "jira_username": "your-email@company.com",
-  "jira_api_token": "your-jira-api-token",
-  "tempo_api_token": "your-tempo-api-token",
-  "working_hours_per_day": 7.5,
+  "jira_pat_token": "your-jira-pat-token",
+  "worker_id": "auto",
+  "working_hours_per_day": 8.0,
   "jira_ticket_pattern": "SE-\\d+",
   "excluded_apps": ["Slack", "Personal Browser"],
-  "minimum_activity_duration_seconds": 300,
-  "time_rounding_minutes": 15,
+  "minimum_activity_duration_seconds": 60,
+  "time_rounding_minutes": 30,
   "preview_file_path": "tempo_preview.json",
   "default_processing_mode": "daily",
   "mappings_file": "mappings.json",
   "static_tasks_file": "static_tasks.json",
-  "log_level": "INFO",
-  "log_file": "activitywatch-tempo.log"
+  "log_level": "DEBUG",
+  "log_file": "activitywatch-tempo.log",
+  "sequential_time_allocation": {
+    "enabled": true,
+    "work_start_time": "08:30",
+    "work_end_time": "17:00",
+    "gap_minutes": 0,
+    "static_tasks_priority": true
+  }
 }
 ```
 
@@ -562,7 +569,40 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 ```
 
-## Recent Bug Fixes
+## Recent Improvements (June 2025)
+
+### User Control Enhancement
+
+**Enhanced Overflow Handling**: Removed automatic proportional scaling when over daily limits. Users now have full control over time adjustments with intelligent suggestions for what to reduce.
+
+**Smart Suggestions**: When time exceeds daily limits, the system analyzes entries and suggests specific reductions based on:
+
+- Admin/overhead tasks that can be reduced
+- Short activities that might be removed
+- General/research activities that could be trimmed
+- Multiple entries for the same ticket that could be consolidated
+
+**Submission Validation**: Added validation that blocks submission when still over daily limits, requiring manual adjustment before proceeding.
+
+### Configuration Simplification
+
+**Removed Username Requirement**: Eliminated unnecessary `jira_username` field since PAT tokens don't require it. Configuration is now simpler and matches modern authentication practices.
+
+**Fixed Duplicate Auto-Detection**: Resolved issue where worker ID was being auto-detected twice during initialization, eliminating duplicate log messages.
+
+### Authentication Improvements
+
+**Single Token Authentication**: Simplified from dual-token system to single `jira_pat_token` that handles both Jira and Tempo API access.
+
+**Automatic Worker ID Detection**: System now auto-detects worker ID from PAT token, eliminating manual configuration in most cases.
+
+### Bug Fixes
+
+**Sequential Time Allocation**: Fixed critical issue where multiple tasks were assigned to the same timestamp due to time rounding happening after sequential allocation.
+
+**Duration Filtering**: Fixed inconsistent duration filtering that prevented window mappings from working correctly when activity duration was between 60-300 seconds.
+
+## Previous Bug Fixes
 
 ### Duration Filtering Fix (January 2025)
 
