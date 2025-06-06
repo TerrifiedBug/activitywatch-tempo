@@ -148,21 +148,18 @@ Edit `mappings.json` to map specific window titles to Jira tickets:
       "name": "ZScaler TAM Meetings",
       "pattern": "ZScaler TAM Meet",
       "jira_key": "SE-1234",
-      "activity_type": "Meeting",
       "description": "ZScaler TAM vendor call"
     },
     {
       "name": "Sprint Planning",
       "pattern": "Twitch|Sprint Planning|Planning Meeting",
       "jira_key": "SE-PLANNING",
-      "activity_type": "Meeting",
       "description": "Sprint planning session"
     },
     {
       "name": "Vendor Calls",
       "pattern": "Vendor Call|Partner Meeting|External Meeting",
       "jira_key": "SE-VENDOR",
-      "activity_type": "Meeting",
       "description": "External vendor/partner call"
     }
   ],
@@ -187,7 +184,6 @@ Edit `static_tasks.json` to define daily and weekly recurring tasks:
       "time": "09:30",
       "duration_minutes": 60,
       "description": "Daily standup meeting",
-      "activity_type": "Meeting",
       "enabled": true
     },
     {
@@ -196,7 +192,6 @@ Edit `static_tasks.json` to define daily and weekly recurring tasks:
       "time": "08:30",
       "duration_minutes": 15,
       "description": "Daily email review and admin tasks",
-      "activity_type": "Administration",
       "enabled": false
     }
   ],
@@ -208,7 +203,6 @@ Edit `static_tasks.json` to define daily and weekly recurring tasks:
       "time": "10:00",
       "duration_minutes": 120,
       "description": "Weekly sprint planning session",
-      "activity_type": "Meeting",
       "enabled": false
     }
   ]
@@ -308,15 +302,13 @@ The generated preview file contains:
       "jira_key": "SE-STANDUP",
       "duration_seconds": 1800,
       "start_time": "2024-01-14T09:30:00",
-      "description": "Daily standup meeting",
-      "activity_type": "Meeting"
+      "comment": "Daily standup meeting"
     },
     {
       "jira_key": "SE-1234",
       "duration_seconds": 14400,
       "start_time": "2024-01-14T10:00:00",
-      "description": "Work on SE-1234 (5 activities)",
-      "activity_type": "Development"
+      "comment": "Work on SE-1234 (5 activities)"
     }
   ]
 }
@@ -328,8 +320,7 @@ You can manually edit the preview file to:
 
 - **Adjust durations**: Change `duration_seconds` values
 - **Reassign tickets**: Modify `jira_key` for different ticket assignment
-- **Update descriptions**: Edit `description` text
-- **Change activity types**: Modify `activity_type` (Development, Meeting, Research, etc.)
+- **Update descriptions**: Edit `comment` text
 - **Add entries**: Copy the entry structure to add manual entries
 - **Remove entries**: Delete unwanted entries
 - **Split time**: Divide long sessions across multiple tickets
