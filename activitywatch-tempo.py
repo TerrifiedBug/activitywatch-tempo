@@ -36,7 +36,6 @@ class TimeEntry:
 class Config:
     """Configuration settings"""
     jira_url: str
-    jira_username: str
     jira_pat_token: str
     worker_id: str
     working_hours_per_day: float = 7.5
@@ -688,7 +687,6 @@ class AutomationManager:
 
             config = Config(
                 jira_url=config_data['jira_url'],
-                jira_username=config_data['jira_username'],
                 jira_pat_token=config_data['jira_pat_token'],
                 worker_id=worker_id,
                 working_hours_per_day=config_data.get('working_hours_per_day', 7.5),
