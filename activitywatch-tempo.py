@@ -673,16 +673,30 @@ class AutomationManager:
             worker_id = config_data.get('worker_id', 'auto')
             if worker_id in ['auto', 'your-worker-id', '']:
                 # Try to auto-detect worker_id using the PAT token
-                temp_integration = JiraTempoIntegration(type('TempConfig', (), {
-                    'jira_url': config_data['jira_url'],
-                    'jira_pat_token': config_data['jira_pat_token']
-                })())
-                detected_worker_id = temp_integration.get_worker_id()
-                if detected_worker_id:
-                    worker_id = detected_worker_id
-                    logger.info(f"Auto-detected worker_id: {worker_id}")
-                else:
-                    logger.warning("Could not auto-detect worker_id, using configured value")
+                try:
+                    # Create a minimal session for auto-detection
+                    session = requests.Session()
+                    session.headers.update({
+                        'Authorization': f'Bearer {config_data["jira_pat_token"]}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    })
+
+                    response = session.get(f"{config_data['jira_url']}/rest/api/2/myself")
+                    if response.status_code == 200:
+                        user_info = response.json()
+                        detected_worker_id = user_info.get('key') or user_info.get('accountId') or user_info.get('name')
+                        if detected_worker_id:
+                            worker_id = detected_worker_id
+                            logger.info(f"Auto-detected worker_id: {worker_id}")
+                        else:
+                            logger.warning("Could not determine worker_id from user info")
+                            worker_id = config_data.get('worker_id', 'UNKNOWN')
+                    else:
+                        logger.warning(f"Failed to auto-detect worker_id: {response.status_code}")
+                        worker_id = config_data.get('worker_id', 'UNKNOWN')
+                except Exception as e:
+                    logger.warning(f"Error auto-detecting worker_id: {e}")
                     worker_id = config_data.get('worker_id', 'UNKNOWN')
 
             config = Config(
