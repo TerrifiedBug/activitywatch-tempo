@@ -12,7 +12,7 @@ This tool bridges ActivityWatch (time tracking) with Jira Tempo (timesheet manag
 
 - **Jira Ticket Detection**: Automatically detects SE-prefixed tickets in window titles
 - **Static Task Management**: Configurable daily/weekly recurring tasks (standup, admin, etc.)
-- **Smart Time Management**: User-controlled overflow handling with intelligent suggestions
+- **Smart Time Management**: User-controlled overflow handling with detailed reporting
 - **Automatic Worker ID Detection**: Auto-detects worker ID from PAT token
 
 ### ✅ Smart Activity Processing
