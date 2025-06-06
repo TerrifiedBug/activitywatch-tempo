@@ -1,6 +1,5 @@
 {
   "jira_url": "https://jira.domain.com",
-  "jira_username": "username",
   "jira_pat_token": "your-jira-pat-token",
   "worker_id": "auto",
   "working_hours_per_day": 8,
