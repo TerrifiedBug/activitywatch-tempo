@@ -1292,22 +1292,22 @@ def parse_arguments():
         epilog="""
 Examples:
   # Generate daily preview for yesterday
-  python activitywatch-tempo.py
+  aw-tempo
 
   # Generate weekly preview for last week
-  python activitywatch-tempo.py --weekly
+  aw-tempo --weekly
 
   # Generate preview for specific date
-  python activitywatch-tempo.py --date 2024-01-15
+  aw-tempo --date 2024-01-15
 
   # Submit preview entries to Tempo
-  python activitywatch-tempo.py --submit
+  aw-tempo --submit
 
   # Direct submission (legacy mode)
-  python activitywatch-tempo.py --direct
+  aw-tempo --direct
 
   # Start scheduler
-  python activitywatch-tempo.py --scheduler
+  aw-tempo --scheduler
         """
     )
 
