@@ -49,6 +49,10 @@ the current directory if they don’t exist, or merges any new keys into existin
 files. Then edit them to fit your environment. At minimum set your Jira URL and
 PAT token in `config.json`.
 
+The default templates for these configuration files are bundled with the
+package under `awtempo/defaults` and copied over when running
+`--update-config`.
+
 `config.json` also controls time rounding, daily hour limits and other
 behaviour. `mappings.json` lets you map specific window titles or applications
 to Jira keys, while `static_tasks.json` defines recurring tasks like stand‑ups.
