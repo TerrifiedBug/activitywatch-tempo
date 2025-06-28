@@ -18,6 +18,7 @@ import logging
 import argparse
 import sys
 from pathlib import Path
+import time as time_module
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -1219,7 +1220,7 @@ class AutomationManager:
 
         while True:
             schedule.run_pending()
-            time.sleep(60)  # Check every minute
+            time_module.sleep(60)  # Check every minute
 
 def parse_arguments():
     """Parse command line arguments"""
