@@ -38,7 +38,8 @@ class Config:
     jira_pat_token: str
     worker_id: str
     working_hours_per_day: float = 7.5
-    time_rounding_minutes: int = 15  # Round to nearest 15, 30, or 60 minutes
+    # Round duration UP to the next 15, 30, or 60 minute interval
+    time_rounding_minutes: int = 15
     preview_file_path: str = "tempo_preview.json"
     default_processing_mode: str = "daily"
     mappings_file: str = "mappings.json"
