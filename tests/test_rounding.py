@@ -1,7 +1,6 @@
-import importlib.util
-from pathlib import Path
 import sys
 import types
+from pathlib import Path
 import pytest
 
 # Create dummy modules for external dependencies not installed in test env
@@ -9,15 +8,10 @@ for name in ["requests", "schedule", "dateutil", "dateutil.parser"]:
     if name not in sys.modules:
         sys.modules[name] = types.ModuleType(name)
 
-# Load the main script as a module since the filename contains a hyphen
-spec = importlib.util.spec_from_file_location(
-    "activitywatch_tempo",
-    Path(__file__).resolve().parents[1] / "activitywatch-tempo.py",
-)
-aw = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(aw)
-ActivityWatchProcessor = aw.ActivityWatchProcessor
-Config = aw.Config
+# Ensure the package is importable when tests run without installation
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from awtempo.cli import ActivityWatchProcessor, Config
 
 
 @pytest.mark.parametrize(

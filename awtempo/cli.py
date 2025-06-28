@@ -19,6 +19,7 @@ import argparse
 import sys
 from pathlib import Path
 import time as time_module
+import shutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -97,6 +98,66 @@ class TimeSlot:
     @property
     def duration_seconds(self) -> int:
         return int((self.end_time - self.start_time).total_seconds())
+
+# ---------------------------------------------------------------------------
+# Configuration utilities
+# ---------------------------------------------------------------------------
+
+def merge_json_defaults(default_path: Path, user_path: Path) -> bool:
+    """Merge keys from ``default_path`` into ``user_path`` without overwriting existing values."""
+    if not default_path.exists():
+        return False
+    if not user_path.exists():
+        shutil.copy(default_path, user_path)
+        logger.info(f"Created {user_path} from defaults")
+        return True
+
+    with open(default_path, 'r') as f:
+        default_data = json.load(f)
+    with open(user_path, 'r') as f:
+        user_data = json.load(f)
+
+    changed = False
+
+    def merge(d, u):
+        nonlocal changed
+        for k, v in d.items():
+            if k not in u:
+                u[k] = v
+                changed = True
+            elif isinstance(v, dict) and isinstance(u.get(k), dict):
+                merge(v, u[k])
+
+    merge(default_data, user_data)
+
+    if changed:
+        with open(user_path, 'w') as f:
+            json.dump(user_data, f, indent=2)
+        logger.info(f"Updated {user_path} with new settings")
+
+    return changed
+
+def update_config_files(config_path: str, config: Optional['Config'] = None) -> None:
+    """Update user configuration, mappings and static task files from defaults."""
+    defaults_dir = Path(__file__).parent / 'defaults'
+    config_file = Path(config_path)
+    merge_json_defaults(defaults_dir / 'config.json', config_file)
+
+    if config is None:
+        try:
+            with open(config_file, 'r') as f:
+                data = json.load(f)
+            mappings_file = data.get('mappings_file', 'mappings.json')
+            static_file = data.get('static_tasks_file', 'static_tasks.json')
+        except Exception as e:
+            logger.error(f"Could not read config for update: {e}")
+            return
+    else:
+        mappings_file = config.mappings_file
+        static_file = config.static_tasks_file
+
+    merge_json_defaults(defaults_dir / 'mappings.json', Path(mappings_file))
+    merge_json_defaults(defaults_dir / 'static_tasks.json', Path(static_file))
 
 class ActivityWatchProcessor:
     """Processes ActivityWatch data for Jira integration"""
@@ -1293,6 +1354,12 @@ Examples:
         help='Configuration file path (default: config.json)'
     )
 
+    parser.add_argument(
+        '--update-config',
+        action='store_true',
+        help='Merge new default settings into your configuration files'
+    )
+
     return parser.parse_args()
 
 def main():
@@ -1304,6 +1371,9 @@ def main():
     except Exception as e:
         logger.error(f"Failed to initialize: {e}")
         sys.exit(1)
+
+    if args.update_config:
+        update_config_files(args.config, manager.config)
 
     # Parse date if provided
     target_date = None

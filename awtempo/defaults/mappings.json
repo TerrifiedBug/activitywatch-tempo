@@ -1,0 +1,89 @@
+{
+  "mappings": [
+    {
+      "name": "Zscaler TAM Meetings",
+      "pattern": "Zscaler TAM Meet",
+      "jira_key": "SE-1234",
+      "description": "Zscaler TAM vendor call",
+      "match_type": "title",
+      "enabled": true
+    },
+    {
+      "name": "Daily Standup Alternative",
+      "pattern": "Daily Scrum|Morning Standup",
+      "jira_key": "SE-STANDUP",
+      "description": "Daily standup meeting",
+      "match_type": "title",
+      "enabled": true
+    },
+    {
+      "name": "Sprint Planning",
+      "pattern": "Sprint Planning|Planning Meeting",
+      "jira_key": "SE-PLANNING",
+      "description": "Sprint planning session",
+      "match_type": "title",
+      "enabled": true
+    },
+    {
+      "name": "Retrospective",
+      "pattern": "Retrospective|Retro Meeting",
+      "jira_key": "SE-RETRO",
+      "description": "Sprint retrospective",
+      "match_type": "title",
+      "enabled": true
+    },
+    {
+      "name": "Vendor Calls",
+      "pattern": "Vendor Call|Partner Meeting|External Meeting",
+      "jira_key": "SE-VENDOR",
+      "description": "External vendor/partner call",
+      "match_type": "title",
+      "enabled": true
+    },
+    {
+      "name": "Training Sessions",
+      "pattern": "activitywatch-tempo.py|Training|Workshop|Learning",
+      "jira_key": "SE-TRAINING",
+      "description": "Training and development",
+      "match_type": "title",
+      "enabled": true
+    },
+    {
+      "name": "Code Review",
+      "pattern": "Code Review|PR Review|Pull Request",
+      "jira_key": "SE-REVIEW",
+      "description": "Code review activities",
+      "match_type": "title",
+      "enabled": true
+    },
+    {
+      "name": "Twitch App Usage",
+      "pattern": "Twitch",
+      "jira_key": "SE-twitch",
+      "description": "Twitch streaming activities",
+      "match_type": "app",
+      "enabled": true
+    },
+    {
+      "name": "Visual Studio Code",
+      "pattern": "Visual Studio Code|Code",
+      "jira_key": "SE-DEVELOPMENT",
+      "description": "Development work in VS Code",
+      "match_type": "app",
+      "enabled": false
+    },
+    {
+      "name": "Chrome Browser Work",
+      "pattern": "Google Chrome",
+      "jira_key": "SE-RESEARCH",
+      "description": "Research and browsing activities",
+      "match_type": "app",
+      "enabled": false
+    }
+  ],
+  "settings": {
+    "case_sensitive": false,
+    "priority": "first_match",
+    "fallback_to_ticket_detection": true
+  }
+}
