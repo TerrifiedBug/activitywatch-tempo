@@ -5,7 +5,7 @@
   "working_hours_per_day": 8,
   "jira_ticket_pattern": "SE-\\d+",
   "excluded_apps": ["Slack", "Personal Browser"],
-  "minimum_activity_duration_seconds": 60,
+  "minimum_activity_duration_seconds": 1,
   "time_rounding_minutes": 30,
   "preview_file_path": "tempo_preview.json",
   "default_processing_mode": "daily",
