@@ -32,7 +32,7 @@ Copy `config.json`, `mappings.json` and `static_tasks.json` and edit them to fit
 
 Generate a preview of yesterday's entries (recommended):
 ```bash
-python activitywatch-tempo.py --preview
+python activitywatch-tempo.py
 ```
 Review the `tempo_preview.json` file and edit it if needed, then submit:
 ```bash
@@ -54,7 +54,7 @@ The preview file contains all detected time entries with start times, durations 
 ## Example Workflow
 
 1. Ensure ActivityWatch is running.
-2. At the end of the day run `python activitywatch-tempo.py --preview`.
+2. At the end of the day run `python activitywatch-tempo.py`.
 3. Open `tempo_preview.json`, tweak times or ticket keys if necessary.
 4. Submit with `python activitywatch-tempo.py --submit`.
 

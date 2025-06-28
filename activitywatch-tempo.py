@@ -1125,7 +1125,7 @@ class AutomationManager:
 
         except FileNotFoundError:
             logger.error(f"Preview file not found: {self.config.preview_file_path}")
-            logger.error("Run with --preview first to generate the preview file")
+            logger.error("Run the script without --submit first to generate the preview file")
             return []
         except Exception as e:
             logger.error(f"Error loading preview file: {e}")
@@ -1231,13 +1231,13 @@ def parse_arguments():
         epilog="""
 Examples:
   # Generate daily preview for yesterday
-  python activitywatch-tempo.py --preview
+  python activitywatch-tempo.py
 
   # Generate weekly preview for last week
-  python activitywatch-tempo.py --preview --weekly
+  python activitywatch-tempo.py --weekly
 
   # Generate preview for specific date
-  python activitywatch-tempo.py --preview --date 2024-01-15
+  python activitywatch-tempo.py --date 2024-01-15
 
   # Submit preview entries to Tempo
   python activitywatch-tempo.py --submit
@@ -1253,7 +1253,7 @@ Examples:
     parser.add_argument(
         '--preview',
         action='store_true',
-        help='Generate preview file for manual review'
+        help='Generate preview file for manual review (default action)'
     )
 
     parser.add_argument(
@@ -1350,7 +1350,7 @@ def main():
     else:
         # Default behavior - always use preview mode
         logger.info("Generating preview file...")
-        manager.generate_preview(manager.config.default_processing_mode)
+        manager.generate_preview(manager.config.default_processing_mode, target_date)
 
 if __name__ == "__main__":
     main()
