@@ -10,16 +10,19 @@ This script converts ActivityWatch logs into Jira Tempo worklogs. It scans windo
 
 ## Installation
 
-1. Install the package from GitHub:
+1. Install the package from GitHub to ensure you get the latest version:
    ```bash
    pip install git+https://github.com/TerrifiedBug/activitywatch-tempo.git
    ```
-   Alternatively clone the repo and install locally:
+2. Alternatively clone the repo and install locally. `pip install .` requires
+   commit `85150cc` or later:
    ```bash
    git clone https://github.com/TerrifiedBug/activitywatch-tempo.git
    cd activitywatch-tempo
    pip install .
    ```
+   Older commits prior to `85150cc` do not include `pyproject.toml` and cannot
+   be installed with `pip`.
 
 ## Configuration
 
