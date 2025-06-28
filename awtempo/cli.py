@@ -1365,6 +1365,12 @@ def main():
     """Main entry point"""
     args = parse_arguments()
 
+    # Ensure configuration files exist and optionally update them before
+    # instantiating the manager. This allows ``--update-config`` to work even
+    # when no config file has been created yet.
+    if args.update_config or not Path(args.config).exists():
+        update_config_files(args.config)
+
     try:
         manager = AutomationManager(args.config)
     except Exception as e:
@@ -1372,6 +1378,8 @@ def main():
         sys.exit(1)
 
     if args.update_config:
+        # Merge any new keys from the defaults after loading the config so that
+        # user-defined file paths are respected.
         update_config_files(args.config, manager.config)
 
     # Parse date if provided
