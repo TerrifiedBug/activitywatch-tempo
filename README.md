@@ -23,9 +23,20 @@ This script converts ActivityWatch logs into Jira Tempo worklogs. It scans windo
 
 ## Configuration
 
-Copy `config.json`, `mappings.json` and `static_tasks.json` and edit them to fit your environment. At minimum set your Jira URL and PAT token in `config.json`.
+After installation run:
 
-`config.json` also controls time rounding, daily hour limits and other behaviour. `mappings.json` lets you map specific window titles or applications to Jira keys, while `static_tasks.json` defines recurring tasks like stand‑ups.
+```bash
+aw-tempo --update-config
+```
+
+This command creates `config.json`, `mappings.json` and `static_tasks.json` in
+the current directory if they don’t exist, or merges any new keys into existing
+files. Then edit them to fit your environment. At minimum set your Jira URL and
+PAT token in `config.json`.
+
+`config.json` also controls time rounding, daily hour limits and other
+behaviour. `mappings.json` lets you map specific window titles or applications
+to Jira keys, while `static_tasks.json` defines recurring tasks like stand‑ups.
 
 ## Basic Usage
 
