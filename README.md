@@ -79,3 +79,7 @@ Logs are written to the file specified by `log_file` in `config.json` (default: 
 ## Notes
 
 The script assumes window titles contain Jira issue keys (default pattern `SE-123`). Configure `jira_ticket_pattern` if your project uses a different prefix.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
