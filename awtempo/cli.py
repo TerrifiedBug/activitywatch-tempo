@@ -12,7 +12,6 @@ import datetime as dt
 import time
 from dataclasses import dataclass
 from typing import List, Dict, Optional
-import sqlite3
 import schedule
 import logging
 import argparse
