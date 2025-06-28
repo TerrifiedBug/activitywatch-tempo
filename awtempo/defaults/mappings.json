@@ -1,14 +1,6 @@
 {
   "mappings": [
     {
-      "name": "Zscaler TAM Meetings",
-      "pattern": "Zscaler TAM Meet",
-      "jira_key": "SE-1234",
-      "description": "Zscaler TAM vendor call",
-      "match_type": "title",
-      "enabled": true
-    },
-    {
       "name": "Daily Standup Alternative",
       "pattern": "Daily Scrum|Morning Standup",
       "jira_key": "SE-STANDUP",
@@ -42,7 +34,7 @@
     },
     {
       "name": "Training Sessions",
-      "pattern": "activitywatch-tempo.py|Training|Workshop|Learning",
+      "pattern": "Training|Workshop|Learning",
       "jira_key": "SE-TRAINING",
       "description": "Training and development",
       "match_type": "title",
@@ -54,14 +46,6 @@
       "jira_key": "SE-REVIEW",
       "description": "Code review activities",
       "match_type": "title",
-      "enabled": true
-    },
-    {
-      "name": "Twitch App Usage",
-      "pattern": "Twitch",
-      "jira_key": "SE-twitch",
-      "description": "Twitch streaming activities",
-      "match_type": "app",
       "enabled": true
     },
     {
