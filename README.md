@@ -136,10 +136,10 @@ Edit `mappings.json` to map specific window titles or apps to Jira tickets:
 {
   "mappings": [
     {
-      "name": "ZScaler TAM Meetings",
-      "pattern": "ZScaler TAM Meet",
+      "name": "Zscaler TAM Meetings",
+      "pattern": "Zscaler TAM Meet",
       "jira_key": "SE-1234",
-      "description": "ZScaler TAM vendor call",
+      "description": "Zscaler TAM vendor call",
       "match_type": "title",
       "enabled": true
     },
