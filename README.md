@@ -341,7 +341,7 @@ python activitywatch-tempo.py --scheduler
 | Setting                             | Description                    | Default            |
 | ----------------------------------- | ------------------------------ | ------------------ |
 | `working_hours_per_day`             | Maximum hours per day          | 7.5                |
-| `time_rounding_minutes`             | Round time to nearest interval | 15 (15, 30, or 60) |
+| `time_rounding_minutes`             | Round time up to next interval | 15 (15, 30, or 60) |
 | `jira_ticket_pattern`               | Regex for ticket detection     | SE-\\d+            |
 | `minimum_activity_duration_seconds` | Minimum trackable activity     | 60                 |
 | `excluded_apps`                     | Apps to ignore                 | []                 |
