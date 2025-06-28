@@ -7,7 +7,9 @@ Automatically processes ActivityWatch data and updates Jira Tempo timesheets
 import json
 import re
 import requests
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
+import datetime as dt
+import time
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 import sqlite3
@@ -228,7 +230,7 @@ class ActivityWatchProcessor:
                 if should_add:
                     # Parse time
                     time_parts = task.time.split(':')
-                    task_time = time(int(time_parts[0]), int(time_parts[1]))
+                    task_time = dt.time(int(time_parts[0]), int(time_parts[1]))
 
                     entry = TimeEntry(
                         jira_key=task.jira_key,
@@ -408,7 +410,7 @@ class ActivityWatchProcessor:
         time_parts = time_str.split(':')
         hour = int(time_parts[0])
         minute = int(time_parts[1])
-        return datetime.combine(date.date(), time(hour, minute))
+        return datetime.combine(date.date(), dt.time(hour, minute))
 
     def calculate_time_slots(self, static_tasks: List[TimeEntry], date: datetime) -> List[TimeSlot]:
         """Calculate available time slots between static tasks and lunch break"""
@@ -912,7 +914,7 @@ class AutomationManager:
             if should_add:
                 # Parse time
                 time_parts = task.time.split(':')
-                task_time = time(int(time_parts[0]), int(time_parts[1]))
+                task_time = dt.time(int(time_parts[0]), int(time_parts[1]))
 
                 entry = TimeEntry(
                     jira_key=task.jira_key,
