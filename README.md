@@ -10,16 +10,15 @@ This script converts ActivityWatch logs into Jira Tempo worklogs. It scans windo
 
 ## Installation
 
-1. Clone the repository:
+1. Install the package from GitHub:
+   ```bash
+   pip install git+https://github.com/TerrifiedBug/activitywatch-tempo.git
+   ```
+   Alternatively clone the repo and install locally:
    ```bash
    git clone https://github.com/TerrifiedBug/activitywatch-tempo.git
    cd activitywatch-tempo
-   ```
-2. Install dependencies (preferably in a virtual environment):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
+   pip install .
    ```
 
 ## Configuration
@@ -32,11 +31,11 @@ Copy `config.json`, `mappings.json` and `static_tasks.json` and edit them to fit
 
 Generate a preview of yesterday's entries (recommended):
 ```bash
-python activitywatch-tempo.py
+aw-tempo
 ```
 Review the `tempo_preview.json` file and edit it if needed, then submit:
 ```bash
-python activitywatch-tempo.py --submit
+aw-tempo --submit
 ```
 
 ### Additional Options
@@ -46,6 +45,7 @@ python activitywatch-tempo.py --submit
 - `--direct` – process and submit without creating a preview (not recommended)
 - `--scheduler` – run a daily scheduler that processes the previous day at 08:00
 - `--config PATH` – use an alternative configuration file
+- `--update-config` – merge new default settings into your config files
 
 ## Preview File
 
@@ -54,9 +54,9 @@ The preview file contains all detected time entries with start times, durations 
 ## Example Workflow
 
 1. Ensure ActivityWatch is running.
-2. At the end of the day run `python activitywatch-tempo.py`.
+2. At the end of the day run `aw-tempo`.
 3. Open `tempo_preview.json`, tweak times or ticket keys if necessary.
-4. Submit with `python activitywatch-tempo.py --submit`.
+4. Submit with `aw-tempo --submit`.
 
 ## Logging
 

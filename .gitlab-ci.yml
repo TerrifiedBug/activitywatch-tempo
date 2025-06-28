@@ -1,0 +1,24 @@
+stages:
+  - test
+  - build
+
+test:
+  stage: test
+  image: python:3.10
+  script:
+    - pip install -r requirements.txt
+    - pip install -e .
+    - pytest -q
+
+build:
+  stage: build
+  image: python:3.10
+  script:
+    - pip install build
+    - python -m build
+  artifacts:
+    paths:
+      - dist/*.whl
+    expire_in: 1 week
+  only:
+    - tags
