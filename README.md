@@ -1,6 +1,6 @@
 # ActivityWatch Tempo
 
-This script converts ActivityWatch logs into Jira Tempo worklogs. It scans window titles for Jira issue keys, groups your activity by ticket and optionally adds recurring tasks before submitting everything to Tempo.
+This script converts ActivityWatch logs into Jira Tempo worklogs. It can extract Jira keys directly from window titles or apply custom mappings that match on window titles or application names. Activities are grouped by ticket and optional recurring tasks are added before everything is submitted to Tempo.
 
 ## Requirements
 
@@ -53,9 +53,24 @@ The default templates for these configuration files are bundled with the
 package under `awtempo/defaults` and copied over when running
 `--update-config`.
 
+
 `config.json` also controls time rounding, daily hour limits and other
-behaviour. `mappings.json` lets you map specific window titles or applications
-to Jira keys, while `static_tasks.json` defines recurring tasks like stand‑ups.
+behaviour.
+
+### Mappings
+
+`mappings.json` contains a list of rules that search window titles or
+application names for patterns. Each entry includes a `pattern`, the
+`jira_key` it should map to and a `match_type` (`title`, `app` or `both`). Add
+new objects to the `mappings` array to automatically assign activity to a
+ticket even when the key is not present in the title.
+
+### Static tasks
+
+`static_tasks.json` defines recurring tasks that are inserted automatically.
+Daily tasks go in the `daily_tasks` list, while weekly tasks live under
+`weekly_tasks` and include a `day_of_week` field. Each task needs a `time`,
+`duration_minutes`, target `jira_key` and description.
 
 ## Basic Usage
 
@@ -94,7 +109,10 @@ Logs are written to the file specified by `log_file` in `config.json` (default: 
 
 ## Notes
 
-The script assumes window titles contain Jira issue keys (default pattern `SE-123`). Configure `jira_ticket_pattern` if your project uses a different prefix.
+Each ActivityWatch event is first compared against your mappings. If no mapping
+matches, the script falls back to detecting Jira issue keys directly from the
+window title using `jira_ticket_pattern` (default `SE-123`). Adjust the pattern
+if your project uses a different prefix.
 
 ## License
 
