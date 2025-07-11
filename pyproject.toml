@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "awtempo"
-version = "0.1.0"
+version = "0.2.0"
 description = "ActivityWatch to Jira Tempo automation script"
 authors = [{name = "ActivityWatch Tempo"}]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
     "requests>=2.28.0",
     "schedule>=1.2.0",
